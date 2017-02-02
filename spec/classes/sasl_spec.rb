@@ -26,6 +26,8 @@ describe 'sasl' do
       case facts[:osfamily]
       when 'Debian'
         it { should contain_file('/usr/lib/sasl2') }
+        it { should contain_file('/usr/lib/sasl2/berkeley_db.active') }
+        it { should contain_file('/usr/lib/sasl2/berkeley_db.txt') }
         it { should contain_package('libsasl2-2') }
       when 'RedHat'
         it { should contain_file('/etc/sasl2') }
