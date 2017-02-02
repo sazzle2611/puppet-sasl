@@ -51,8 +51,8 @@ describe 'sasl::application' do
 
             case facts[:operatingsystem]
             when 'Ubuntu'
-              case facts[:lsbdistcodename]
-              when 'trusty'
+              case facts[:operatingsystemrelease]
+              when '14.04'
                 it { should contain_package('libsasl2-modules-db') }
               end
             end
@@ -65,6 +65,85 @@ describe 'sasl::application' do
               EOS
             end
             it { should contain_package('cyrus-sasl-plain') }
+          end
+
+          it { should contain_sasl__application('test') }
+        end
+
+        context 'with ldapdb method' do
+          let(:params) do
+            {
+              :pwcheck_method => 'auxprop',
+              :auxprop_plugin => 'ldapdb',
+              :mech_list      => ['plain', 'login'],
+              :ldapdb_uri     => ['ldap://example.com', 'ldaps://example.com'],
+            }
+          end
+
+          case facts[:osfamily]
+          when 'Debian'
+            it do
+              should contain_file('/usr/lib/sasl2/test.conf').with_content(<<-EOS.gsub(/^ +/, ''))
+                pwcheck_method: auxprop
+                mech_list: plain login
+                auxprop_plugin: ldapdb
+                ldapdb_uri: ldap://example.com ldaps://example.com
+              EOS
+            end
+            it { should contain_package('libsasl2-modules') }
+            it { should contain_package('libsasl2-modules-ldap') }
+          when 'RedHat'
+            it do
+              should contain_file('/etc/sasl2/test.conf').with_content(<<-EOS.gsub(/^ +/, ''))
+                pwcheck_method: auxprop
+                mech_list: plain login
+                auxprop_plugin: ldapdb
+                ldapdb_uri: ldap://example.com ldaps://example.com
+              EOS
+            end
+            it { should contain_package('cyrus-sasl-ldap') }
+            it { should contain_package('cyrus-sasl-plain') }
+          end
+
+          it { should contain_sasl__application('test') }
+        end
+
+        context 'with sql method' do
+          let(:params) do
+            {
+              :pwcheck_method => 'auxprop',
+              :auxprop_plugin => 'sql',
+              :mech_list      => ['plain', 'login'],
+              :sql_engine     => 'mysql',
+              :sql_hostnames  => ['localhost', ['127.0.0.1', 3306]],
+            }
+          end
+
+          case facts[:osfamily]
+          when 'Debian'
+            it do
+              should contain_file('/usr/lib/sasl2/test.conf').with_content(<<-EOS.gsub(/^ +/, ''))
+                pwcheck_method: auxprop
+                mech_list: plain login
+                auxprop_plugin: sql
+                sql_engine: mysql
+                sql_hostnames: localhost, 127.0.0.1:3306
+              EOS
+            end
+            it { should contain_package('libsasl2-modules') }
+            it { should contain_package('libsasl2-modules-sql') }
+          when 'RedHat'
+            it do
+              should contain_file('/etc/sasl2/test.conf').with_content(<<-EOS.gsub(/^ +/, ''))
+                pwcheck_method: auxprop
+                mech_list: plain login
+                auxprop_plugin: sql
+                sql_engine: mysql
+                sql_hostnames: localhost, 127.0.0.1:3306
+              EOS
+            end
+            it { should contain_package('cyrus-sasl-plain') }
+            it { should contain_package('cyrus-sasl-sql') }
           end
 
           it { should contain_sasl__application('test') }

@@ -1,125 +1,116 @@
+# Installs per-application SASL authentication configuration.
 #
+# @example Configure Postfix for `DIGEST-MD5` and `CRAM-MD5` authentication using the sasldb backend
+#   include ::sasl
+#   ::sasl::application { 'smtpd':
+#     pwcheck_method => 'auxprop',
+#     auxprop_plugin => 'sasldb',
+#     mech_list      => ['digest-md5', 'cram-md5'],
+#   }
+#
+# @example Configure Postfix for `PLAIN` and `LOGIN` authentication using the saslauthd backend which itself is using LDAP+STARTTLS
+#   include ::sasl
+#   class { '::sasl::authd':
+#     mechanism           => 'ldap',
+#     ldap_auth_method    => 'bind',
+#     ldap_search_base    => 'ou=people,dc=example,dc=com',
+#     ldap_servers        => ['ldap://ldap.example.com'],
+#     ldap_start_tls      => true,
+#     ldap_tls_cacert_dir => '/etc/pki/tls/certs',
+#     ldap_tls_ciphers    => 'AES256',
+#   }
+#   ::sasl::application { 'smtpd':
+#     pwcheck_method => 'saslauthd',
+#     mech_list      => ['plain', 'login'],
+#   }
+#
+# @param pwcheck_method The password check method.
+# @param mech_list The authentication mechanisms to offer/support.
+# @param application The name of the application.
+# @param auxprop_plugin If the `pwcheck_method` is `auxprop` then the name of
+#   the plugin to use.
+# @param ldapdb_uri List of LDAP URI's to query.
+# @param ldapdb_id SASL ID to use to authenticate with LDAP.
+# @param ldapdb_mech SASL mechanism to use with LDAP.
+# @param ldapdb_pw Password to use with LDAP.
+# @param ldapdb_rc Path to separate LDAP configuration file.
+# @param ldapdb_starttls Whether to attempt STARTTLS or not.
+# @param sasldb_path Path to local SASL database.
+# @param sql_engine Which SQL engine to use.
+# @param sql_hostnames List of database servers to use.
+# @param sql_user Database user to use.
+# @param sql_passwd Password of database user.
+# @param sql_database Name of the database.
+# @param sql_select SQL query used with `SELECT` operations.
+# @param sql_insert SQL statement used with `INSERT` operations.
+# @param sql_update SQL statement used with `UPDATE` operations.
+# @param sql_usessl Whether to use SSL or not.
+#
+# @see puppet_classes::sasl ::sasl
+# @see puppet_classes::sasl::authd ::sasl::authd
 define sasl::application (
-  $pwcheck_method,
-  $mech_list,
-  $auxprop_plugin  = undef,
+  Enum['auxprop', 'saslauthd']                     $pwcheck_method,
+  Array[SASL::Mech, 1]                             $mech_list,
+  String                                           $application     = $title,
+  Optional[SASL::Auxprop]                          $auxprop_plugin  = undef,
   # ldapdb
-  $ldapdb_uri      = undef,
-  $ldapdb_id       = undef,
-  $ldapdb_mech     = undef,
-  $ldapdb_pw       = undef,
-  $ldapdb_rc       = undef,
-  $ldapdb_starttls = undef,
+  Optional[Array[Bodgitlib::LDAP::URI::Simple, 1]] $ldapdb_uri      = undef,
+  Optional[String]                                 $ldapdb_id       = undef,
+  Optional[String]                                 $ldapdb_mech     = undef,
+  Optional[String]                                 $ldapdb_pw       = undef,
+  Optional[Stdlib::Absolutepath]                   $ldapdb_rc       = undef,
+  Optional[Enum['try', 'demand']]                  $ldapdb_starttls = undef,
   # sasldb
-  $sasldb_path     = undef,
+  Optional[Stdlib::Absolutepath]                   $sasldb_path     = undef,
   # sql
-  $sql_engine      = undef,
-  $sql_hostnames   = undef,
-  $sql_user        = undef,
-  $sql_passwd      = undef,
-  $sql_database    = undef,
-  $sql_select      = undef,
-  $sql_insert      = undef,
-  $sql_update      = undef,
-  $sql_usessl      = undef,
+  Optional[Enum['mysql', 'pgsql', 'sqlite']]       $sql_engine      = undef,
+  Optional[Array[SASL::HostPort, 1]]               $sql_hostnames   = undef,
+  Optional[String]                                 $sql_user        = undef,
+  Optional[String]                                 $sql_passwd      = undef,
+  Optional[String]                                 $sql_database    = undef,
+  Optional[String]                                 $sql_select      = undef,
+  Optional[String]                                 $sql_insert      = undef,
+  Optional[String]                                 $sql_update      = undef,
+  Optional[Boolean]                                $sql_usessl      = undef,
 ) {
 
   if ! defined(Class['::sasl']) {
-    fail('You must include the sasl base class before using any sasl defined resources') # lint:ignore:80chars
+    fail('You must include the sasl base class before using any sasl defined resources')
   }
 
-  validate_re($pwcheck_method, '^(?:auxprop|saslauthd)$')
-  validate_array($mech_list)
-
-  if $pwcheck_method == 'auxprop' {
-    validate_re($auxprop_plugin, '^(?:ldapdb|sasldb|sql)$')
-
-    # Validate per-auxprop parameters
-    case $auxprop_plugin { # lint:ignore:case_without_default
-      'ldapdb': {
-        if $ldapdb_uri {
-          validate_array($ldapdb_uri)
-          validate_ldap_uri($ldapdb_uri)
-        }
-        if $ldapdb_id {
-          validate_string($ldapdb_id)
-        }
-        if $ldapdb_mech {
-          validate_string($ldapdb_mech)
-        }
-        if $ldapdb_pw {
-          validate_string($ldapdb_pw)
-        }
-        if $ldapdb_rc {
-          validate_absolute_path($ldapdb_rc)
-        }
-        if $ldapdb_starttls {
-          validate_re($ldapdb_starttls, '^(?:try|demand)$')
-        }
-      }
-      'sasldb': {
-        if $sasldb_path {
-          validate_absolute_path($sasldb_path)
-        }
-      }
-      'sql': {
-        if $sql_engine {
-          validate_re($sql_engine, '^(?:mysql|pgsql|sqlite)$')
-        }
-        if $sql_hostnames {
-          validate_array($sql_hostnames)
-        }
-        if $sql_user {
-          validate_string($sql_user)
-        }
-        if $sql_passwd {
-          validate_string($sql_passwd)
-        }
-        if $sql_database {
-          validate_string($sql_database)
-        }
-        validate_string($sql_select)
-        if $sql_insert {
-          validate_string($sql_insert)
-        }
-        if $sql_update {
-          validate_string($sql_update)
-        }
-        if $sql_usessl {
-          validate_bool($sql_usessl)
-        }
-      }
-    }
-  }
-
-  $service_file = "${::sasl::application_directory}/${name}.conf"
+  $service_file = "${::sasl::application_directory}/${application}.conf"
 
   file { $service_file:
     ensure  => file,
     owner   => 0,
     group   => 0,
     mode    => '0644',
-    content => template('sasl/application.conf.erb'),
+    content => template("${module_name}/application.conf.erb"),
   }
 
-  if $pwcheck_method == 'auxprop' {
-    $auxprop_package = $::sasl::auxprop_packages[$auxprop_plugin]
-    ensure_packages([$auxprop_package])
-    Package[$auxprop_package] -> File[$service_file]
+  case $pwcheck_method {
+    'auxprop': {
+      $auxprop_package = $::sasl::auxprop_packages[$auxprop_plugin]
+      ensure_packages([$auxprop_package])
+      Package[$auxprop_package] -> File[$service_file]
+    }
+    'saslauthd': {
+      # Require saslauthd if that's the method
+      if ! defined(Class['::sasl::authd']) {
+        fail('You must include the sasl::authd class before using any sasl defined resources')
+      }
+      Class['::sasl::authd'] -> File[$service_file]
+    }
+    default: {
+      # noop
+    }
   }
 
   # Build up an array of packages that need to be installed based on the
   # chosen authentication mechanisms
-  $mech_packages = $::sasl::mech_packages
-  $packages = split(inline_template('<%= Hash[@mech_packages.select { |k,v| @mech_list.include?(k) }].values.uniq.join(",") %>'), ',') # lint:ignore:80chars
+  $packages = unique(values($::sasl::mech_packages.filter |Tuple $package| {
+    member($mech_list, $package[0])
+  }))
   ensure_packages($packages)
   Package[$packages] -> File[$service_file]
-
-  # Require saslauthd if that's the method
-  if $pwcheck_method == 'saslauthd' {
-    if ! defined(Class['::sasl::authd']) {
-      fail('You must include the sasl::authd class before using any sasl defined resources') # lint:ignore:80chars
-    }
-    Service[$sasl::authd::service_name] -> File[$service_file]
-  }
 }

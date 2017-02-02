@@ -1,8 +1,6 @@
 require 'spec_helper'
 
 shared_examples_for 'sasl::authd' do
-  it { should contain_anchor('sasl::authd::begin') }
-  it { should contain_anchor('sasl::authd::end') }
   it { should contain_class('sasl::authd') }
   it { should contain_class('sasl::authd::config') }
   it { should contain_class('sasl::authd::install') }
@@ -237,6 +235,144 @@ describe 'sasl::authd' do
                       SOCKETDIR="#{socketdir}"
                       MECH="ldap"
                       FLAGS="-O /tmp/saslauthd.conf -n #{threads}"
+                    EOS
+                  end
+                end
+
+                it { should contain_package('cyrus-sasl') }
+              end
+            end
+          end
+
+          context 'with rimap method' do
+            let(:params) do
+              super().merge(
+                {
+                  :mechanism => 'rimap',
+                }
+              )
+            end
+
+            context 'with just a hostname', :compile do
+              let(:params) do
+                super().merge(
+                  {
+                    :imap_server => 'imap.example.com',
+                  }
+                )
+              end
+
+              it_behaves_like 'sasl::authd'
+
+              it { should contain_file('/etc/saslauthd.conf').with_ensure('absent') }
+
+              case facts[:osfamily]
+              when 'Debian'
+                it do
+                  should contain_file('/etc/default/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                    # !!! Managed by Puppet !!!
+
+                    START=yes
+                    DESC="SASL Authentication Daemon"
+                    NAME="saslauthd"
+                    MECHANISMS="rimap"
+                    MECH_OPTIONS="imap.example.com"
+                    THREADS=#{threads}
+                    OPTIONS="-c -m /var/run/saslauthd"
+                  EOS
+                end
+                it { should contain_package('sasl2-bin') }
+              when 'RedHat'
+                socketdir = case facts[:operatingsystemmajrelease]
+                when '6'
+                  '/var/run/saslauthd'
+                else
+                  '/run/saslauthd'
+                end
+
+                case threads
+                when 5
+                  it do
+                    should contain_file('/etc/sysconfig/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                      # !!! Managed by Puppet !!!
+
+                      SOCKETDIR="#{socketdir}"
+                      MECH="rimap"
+                      FLAGS="-O imap.example.com"
+                    EOS
+                  end
+                else
+                  it do
+                    should contain_file('/etc/sysconfig/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                      # !!! Managed by Puppet !!!
+
+                      SOCKETDIR="#{socketdir}"
+                      MECH="rimap"
+                      FLAGS="-O imap.example.com -n #{threads}"
+                    EOS
+                  end
+                end
+
+                it { should contain_package('cyrus-sasl') }
+              end
+            end
+
+            context 'with a hostname and port', :compile do
+              let(:params) do
+                super().merge(
+                  {
+                    :imap_server => ['imap.example.com', 993],
+                  }
+                )
+              end
+
+              it_behaves_like 'sasl::authd'
+
+              it { should contain_file('/etc/saslauthd.conf').with_ensure('absent') }
+
+              case facts[:osfamily]
+              when 'Debian'
+                it do
+                  should contain_file('/etc/default/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                    # !!! Managed by Puppet !!!
+
+                    START=yes
+                    DESC="SASL Authentication Daemon"
+                    NAME="saslauthd"
+                    MECHANISMS="rimap"
+                    MECH_OPTIONS="imap.example.com/993"
+                    THREADS=#{threads}
+                    OPTIONS="-c -m /var/run/saslauthd"
+                  EOS
+                end
+                it { should contain_package('sasl2-bin') }
+              when 'RedHat'
+                socketdir = case facts[:operatingsystemmajrelease]
+                when '6'
+                  '/var/run/saslauthd'
+                else
+                  '/run/saslauthd'
+                end
+
+                case threads
+                when 5
+                  it do
+                    should contain_file('/etc/sysconfig/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                      # !!! Managed by Puppet !!!
+
+                      SOCKETDIR="#{socketdir}"
+                      MECH="rimap"
+                      FLAGS="-O imap.example.com/993"
+                    EOS
+                  end
+                else
+                  it do
+                    should contain_file('/etc/sysconfig/saslauthd').with_content(<<-EOS.gsub(/^ +/, ''))
+                      # !!! Managed by Puppet !!!
+
+                      SOCKETDIR="#{socketdir}"
+                      MECH="rimap"
+                      FLAGS="-O imap.example.com/993 -n #{threads}"
                     EOS
                   end
                 end

@@ -8,10 +8,21 @@ describe 'sasl::application' do
     sasldb_package_name = 'cyrus-sasl-lib'
     application_file    = '/etc/sasl2/test.conf'
   when 'Debian'
-    plain_package_name  = 'libsasl2-modules'
-    md5_package_name    = 'libsasl2-modules'
-    sasldb_package_name = fact('lsbdistcodename') == 'trusty' ? 'libsasl2-modules-db' : 'libsasl2-modules'
-    application_file    = '/usr/lib/sasl2/test.conf'
+    plain_package_name = 'libsasl2-modules'
+    md5_package_name   = 'libsasl2-modules'
+    application_file   = '/usr/lib/sasl2/test.conf'
+
+    case fact('operatingsystem')
+    when 'Ubuntu'
+      case fact('operatingsystemrelease')
+      when '14.04'
+        sasldb_package_name = 'libsasl2-modules-db'
+      else
+        sasldb_package_name = 'libsasl2-modules'
+      end
+    else
+      sasldb_package_name = 'libsasl2-modules'
+    end
   end
 
   context 'with saslauthd method and plain mechanisms' do

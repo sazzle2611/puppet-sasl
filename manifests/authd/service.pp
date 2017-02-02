@@ -1,4 +1,4 @@
-#
+# @!visibility private
 class sasl::authd::service {
 
   service { $::sasl::authd::service_name:

@@ -1,4 +1,4 @@
-#
+# @!visibility private
 class sasl::params {
 
   $saslauthd_service        = 'saslauthd'
@@ -28,23 +28,11 @@ class sasl::params {
         '6'     => '/var/run/saslauthd',
         default => '/run/saslauthd',
       }
-      $saslauthd_mechanisms  = $::operatingsystemmajrelease ? {
-        6       => '^(?:getpwent|kerberos5|ldap|pam|rimap|shadow)$',
-        default => '^(?:getpwent|httpform|kerberos5|ldap|pam|rimap|shadow)$',
-      }
       $saslauthd_hasstatus   = true
     }
     'Debian': {
       $package_name          = 'libsasl2-2'
       $application_directory = '/usr/lib/sasl2'
-      $auxprop_packages      = {
-        'ldapdb' => 'libsasl2-modules-ldap',
-        'sasldb' => $::lsbdistcodename ? {
-          'trusty' => 'libsasl2-modules-db',
-          default  => 'libsasl2-modules',
-        },
-        'sql'    => 'libsasl2-modules-sql',
-      }
       $sasldb_package        = 'sasl2-bin'
       $mech_packages         = {
         'anonymous'  => 'libsasl2-modules',
@@ -56,14 +44,48 @@ class sasl::params {
       }
       $saslauthd_package     = 'sasl2-bin'
       $saslauthd_socket      = '/var/run/saslauthd'
-      $saslauthd_mechanisms  = '^(?:getpwent|kerberos5|ldap|pam|rimap|sasldb|shadow)$' # lint:ignore:80chars
-      $saslauthd_hasstatus   = $::lsbdistcodename ? {
-        'squeeze' => false,
-        default   => true,
+
+      case $::operatingsystem {
+        'Ubuntu': {
+          case $::operatingsystemrelease {
+            '14.04': {
+              $auxprop_packages = {
+                'ldapdb' => 'libsasl2-modules-ldap',
+                'sasldb' => 'libsasl2-modules-db',
+                'sql'    => 'libsasl2-modules-sql',
+              }
+            }
+            default: {
+              $auxprop_packages = {
+                'ldapdb' => 'libsasl2-modules-ldap',
+                'sasldb' => 'libsasl2-modules',
+                'sql'    => 'libsasl2-modules-sql',
+              }
+            }
+          }
+
+          $saslauthd_hasstatus = true
+        }
+        default: {
+          case $::operatingsystemmajrelease {
+            '6': {
+              $saslauthd_hasstatus = false
+            }
+            default: {
+              $saslauthd_hasstatus = true
+            }
+          }
+
+          $auxprop_packages = {
+            'ldapdb' => 'libsasl2-modules-ldap',
+            'sasldb' => 'libsasl2-modules',
+            'sql'    => 'libsasl2-modules-sql',
+          }
+        }
       }
     }
     default: {
-      fail("The ${module_name} module is not supported on an ${::osfamily} based system.") # lint:ignore:80chars
+      fail("The ${module_name} module is not supported on an ${::osfamily} based system.")
     }
   }
 }

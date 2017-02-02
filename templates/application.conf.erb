@@ -31,7 +31,7 @@ sasldb_path: <%= @sasldb_path %>
 sql_engine: <%= @sql_engine %>
 <%     end -%>
 <%     if @sql_hostnames -%>
-sql_hostnames: <%= @sql_hostnames.join(', ') %>
+sql_hostnames: <%= @sql_hostnames.map { |x| Array(x).join(':') }.join(', ') %>
 <%     end -%>
 <%     if @sql_user -%>
 sql_user: <%= @sql_user %>

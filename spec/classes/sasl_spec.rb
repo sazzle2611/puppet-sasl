@@ -18,8 +18,6 @@ describe 'sasl' do
         facts
       end
 
-      it { should contain_anchor('sasl::begin') }
-      it { should contain_anchor('sasl::end') }
       it { should contain_class('sasl') }
       it { should contain_class('sasl::config') }
       it { should contain_class('sasl::install') }

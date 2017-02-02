@@ -45,11 +45,11 @@ ldap_password: <%= @ldap_password %>
 <% if @ldap_password_attr -%>
 ldap_password_attr: <%= @ldap_password_attr %>
 <% end -%>
-<% if @ldap_referrals -%>
-ldap_referrals: <%= @ldap_referrals %>
+<% unless @ldap_referrals.nil? -%>
+ldap_referrals: <%= @ldap_referrals ? 'yes' : 'no' %>
 <% end -%>
-<% if @ldap_restart -%>
-ldap_restart: <%= @ldap_restart %>
+<% unless @ldap_restart.nil? -%>
+ldap_restart: <%= @ldap_restart ? 'yes' : 'no'  %>
 <% end -%>
 <% if @ldap_id -%>
 ldap_id: <%= @ldap_id %>
@@ -72,8 +72,8 @@ ldap_search_base: <%= @ldap_search_base %>
 <% if @ldap_servers -%>
 ldap_servers: <%= @ldap_servers.join(' ') %>
 <% end -%>
-<% if @ldap_start_tls -%>
-ldap_start_tls: <%= @ldap_start_tls %>
+<% unless @ldap_start_tls.nil? -%>
+ldap_start_tls: <%= @ldap_start_tls ? 'yes' : 'no' %>
 <% end -%>
 <% if @ldap_time_limit -%>
 ldap_time_limit: <%= @ldap_time_limit %>
@@ -81,8 +81,8 @@ ldap_time_limit: <%= @ldap_time_limit %>
 <% if @ldap_timeout -%>
 ldap_timeout: <%= @ldap_timeout %>
 <% end -%>
-<% if @ldap_tls_check_peer -%>
-ldap_tls_check_peer: <%= @ldap_tls_check_peer %>
+<% unless @ldap_tls_check_peer.nil? -%>
+ldap_tls_check_peer: <%= @ldap_tls_check_peer ? 'yes' : 'no' %>
 <% end -%>
 <% if @ldap_tls_cacert_file -%>
 ldap_tls_cacert_file: <%= @ldap_tls_cacert_file %>
@@ -99,8 +99,8 @@ ldap_tls_cert: <%= @ldap_tls_cert %>
 <% if @ldap_tls_key -%>
 ldap_tls_key: <%= @ldap_tls_key %>
 <% end -%>
-<% if @ldap_use_sasl -%>
-ldap_use_sasl: <%= @ldap_use_sasl %>
+<% unless @ldap_use_sasl.nil? -%>
+ldap_use_sasl: <%= @ldap_use_sasl ? 'yes' : 'no' %>
 <% end -%>
 <% if @ldap_version -%>
 ldap_version: <%= @ldap_version %>

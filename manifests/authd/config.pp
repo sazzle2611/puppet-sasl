@@ -1,4 +1,4 @@
-#
+# @!visibility private
 class sasl::authd::config {
 
   $socket                  = $::sasl::authd::socket
@@ -40,17 +40,21 @@ class sasl::authd::config {
   $ldap_tls_key            = $::sasl::authd::ldap_tls_key
   $ldap_use_sasl           = $::sasl::authd::ldap_use_sasl
   $ldap_version            = $::sasl::authd::ldap_version
+  $imap_server             = $::sasl::authd::imap_server
 
   $_mech_options = $::sasl::authd::mechanism ? {
     'ldap'  => $ldap_conf_file ? {
       $::sasl::params::saslauthd_ldap_conf_file => '',
       default                                   => $ldap_conf_file,
     },
-    'rimap' => $::sasl::authd::imap_server,
+    'rimap' => type($imap_server) ? {
+      Type[Tuple] => "${imap_server[0]}/${imap_server[1]}",
+      default     => $imap_server,
+    },
     default => '',
   }
 
-  case $::osfamily { # lint:ignore:case_without_default
+  case $::osfamily {
     'RedHat': {
       if size($_mech_options) > 0 {
         $mech_options = "-O ${_mech_options}"
@@ -60,7 +64,7 @@ class sasl::authd::config {
 
       $flags = $threads ? {
         $::sasl::params::saslauthd_threads => $mech_options,
-        default                            => strip("${mech_options} -n ${threads}") # lint:ignore:80chars
+        default                            => strip("${mech_options} -n ${threads}")
       }
 
       file { '/etc/sysconfig/saslauthd':
@@ -81,6 +85,9 @@ class sasl::authd::config {
         mode    => '0644',
         content => template('sasl/default.erb'),
       }
+    }
+    default: {
+      # noop
     }
   }
 

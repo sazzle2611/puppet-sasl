@@ -50,7 +50,7 @@ describe 'sasl::authd' do
       it { should be_installed }
     end
 
-    describe file('/etc/sysconfig/saslauthd'), :if => fact('osfamily') == 'RedHat' do
+    describe file('/etc/sysconfig/saslauthd'), :if => fact('osfamily').eql?('RedHat') do
       it { should be_file }
       it { should be_mode 644 }
       it { should be_owned_by 'root' }
@@ -66,7 +66,7 @@ describe 'sasl::authd' do
       }
     end
 
-    describe file('/etc/default/saslauthd'), :if => fact('osfamily') == 'Debian' do
+    describe file('/etc/default/saslauthd'), :if => fact('osfamily').eql?('Debian') do
       it { should be_file }
       it { should be_mode 644 }
       it { should be_owned_by 'root' }
@@ -87,16 +87,16 @@ describe 'sasl::authd' do
     end
 
     # Debian Squeeze doesn't support 'service saslauthd status'
-    describe service('saslauthd'), :if => fact('lsbdistcodename') != 'squeeze' do
+    describe service('saslauthd'), :unless => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_enabled }
       it { should be_running }
     end
 
-    describe service('saslauthd'), :if => fact('lsbdistcodename') == 'squeeze' do
+    describe service('saslauthd'), :if => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_enabled }
     end
 
-    describe process('saslauthd'), :if => fact('lsbdistcodename') == 'squeeze' do
+    describe process('saslauthd'), :if => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_running }
     end
 
@@ -112,55 +112,6 @@ describe 'sasl::authd' do
   end
 
   context 'with ldap mechanism' do
-
-    it 'install dependencies' do
-      case fact('osfamily')
-      when 'RedHat'
-        case fact('operatingsystemmajrelease')
-        when '6'
-          pp = <<-EOS
-            package { 'ruby-devel':
-              ensure => present,
-            }
-            package { 'oniguruma-devel':
-              ensure => present,
-            }
-            package { 'oniguruma':
-              ensure   => present,
-              provider => 'gem',
-              require  => [
-                Package['ruby-devel'],
-                Package['oniguruma-devel'],
-              ]
-            }
-          EOS
-
-          apply_manifest(pp, :catch_failures => true)
-        end
-      when 'Debian'
-        case fact('lsbdistcodename')
-        when 'precise'
-          pp = <<-EOS
-            package { 'rubygems':
-              ensure => present,
-            }
-            package { 'libonig-dev':
-              ensure => present,
-            }
-            package { 'oniguruma':
-              ensure   => present,
-              provider => 'gem',
-              require  => [
-                Package['rubygems'],
-                Package['libonig-dev'],
-              ]
-            }
-          EOS
-
-          apply_manifest(pp, :catch_failures => true)
-        end
-      end
-    end
 
     it 'should work with no errors' do
       pp = <<-EOS
@@ -213,7 +164,7 @@ describe 'sasl::authd' do
       it { should be_installed }
     end
 
-    describe file('/etc/sysconfig/saslauthd'), :if => fact('osfamily') == 'RedHat' do
+    describe file('/etc/sysconfig/saslauthd'), :if => fact('osfamily').eql?('RedHat') do
       it { should be_file }
       it { should be_mode 644 }
       it { should be_owned_by 'root' }
@@ -229,7 +180,7 @@ describe 'sasl::authd' do
       }
     end
 
-    describe file('/etc/default/saslauthd'), :if => fact('osfamily') == 'Debian' do
+    describe file('/etc/default/saslauthd'), :if => fact('osfamily').eql?('Debian') do
       it { should be_file }
       it { should be_mode 644 }
       it { should be_owned_by 'root' }
@@ -263,21 +214,22 @@ describe 'sasl::authd' do
           ldap_bind_pw: secret
           ldap_search_base: dc=example,dc=com
           ldap_servers: ldap://#{default.ip}
+          ldap_start_tls: no
         EOS
       }
     end
 
     # Debian Squeeze doesn't support 'service saslauthd status'
-    describe service('saslauthd'), :if => fact('lsbdistcodename') != 'squeeze' do
+    describe service('saslauthd'), :unless => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_enabled }
       it { should be_running }
     end
 
-    describe service('saslauthd'), :if => fact('lsbdistcodename') == 'squeeze' do
+    describe service('saslauthd'), :if => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_enabled }
     end
 
-    describe process('saslauthd'), :if => fact('lsbdistcodename') == 'squeeze' do
+    describe process('saslauthd'), :if => fact('operatingsystem').eql?('Debian') and fact('operatingsystemmajrelease').eql?('6') do
       it { should be_running }
     end
 
