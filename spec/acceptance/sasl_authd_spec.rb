@@ -118,24 +118,53 @@ describe 'sasl::authd' do
         include ::openldap
         include ::openldap::client
         class { '::openldap::server':
-          root_dn         => 'cn=Manager,dc=example,dc=com',
-          root_password   => 'secret',
-          suffix          => 'dc=example,dc=com',
-          access          => [
-            'to attrs=userPassword by self =xw by anonymous auth',
-            'to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage by users read',
+          root_dn       => 'cn=Manager,dc=example,dc=com',
+          root_password => 'secret',
+          suffix        => 'dc=example,dc=com',
+          access        => [
+            [
+              {
+                'attrs' => ['userPassword'],
+              },
+              [
+                {
+                  'who'    => ['self'],
+                  'access' => '=xw',
+                },
+                {
+                  'who'    => ['anonymous'],
+                  'access' => 'auth',
+                },
+              ],
+            ],
+            [
+              {
+                'dn' => '*',
+              },
+              [
+                {
+                  'who'    => ['dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth"'],
+                  'access' => 'manage',
+                },
+                {
+                  'who'    => ['users'],
+                  'access' => 'read',
+                },
+              ],
+            ],
           ],
-          ldap_interfaces => ['#{default.ip}'],
-          local_ssf       => 256,
+          interfaces    => ['ldap://#{default.ip}/'],
+          local_ssf     => 256,
         }
         ::openldap::server::schema { 'cosine':
-          position => 1,
+          ensure => present,
         }
         ::openldap::server::schema { 'inetorgperson':
-          position => 2,
+          ensure => present,
         }
         ::openldap::server::schema { 'nis':
-          position => 3,
+          ensure  => present,
+          require => ::Openldap::Server::Schema['cosine'],
         }
 
         include ::sasl
