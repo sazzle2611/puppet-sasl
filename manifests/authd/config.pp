@@ -54,7 +54,7 @@ class sasl::authd::config {
     default => '',
   }
 
-  case $::osfamily {
+  case $facts['os']['family'] {
     'RedHat': {
       if size($_mech_options) > 0 {
         $mech_options = "-O ${_mech_options}"
