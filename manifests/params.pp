@@ -1,6 +1,7 @@
 # @!visibility private
 class sasl::params {
 
+  $saslauthd_hasstatus      = true
   $saslauthd_service        = 'saslauthd'
   $saslauthd_ldap_conf_file = '/etc/saslauthd.conf'
   $saslauthd_threads        = 5
@@ -28,7 +29,6 @@ class sasl::params {
         '6'     => '/var/run/saslauthd',
         default => '/run/saslauthd',
       }
-      $saslauthd_hasstatus   = true
     }
     'Debian': {
       $package_name          = 'libsasl2-2'
@@ -63,19 +63,8 @@ class sasl::params {
               }
             }
           }
-
-          $saslauthd_hasstatus = true
         }
         default: {
-          case $facts['os']['release']['major'] {
-            '6': {
-              $saslauthd_hasstatus = false
-            }
-            default: {
-              $saslauthd_hasstatus = true
-            }
-          }
-
           $auxprop_packages = {
             'ldapdb' => 'libsasl2-modules-ldap',
             'sasldb' => 'libsasl2-modules',
