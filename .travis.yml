@@ -47,3 +47,12 @@ branches:
     - /^v\d/
 notifications:
   email: true
+deploy:
+  provider: puppetforge
+  username: bodgit
+  password:
+    secure: "TK8V8irIh26EbOebDiwDMBsz5dZzMORpn4sI9nfjR7a7Tde6jPY6ABI7wJS9SefxQBOoLbw7ZcPmoVo6HQAlH4IMZ0zJwIfN7Qj+6RAIIuNwro4y2AkzjrAuE0sV/sIcn70Is56KGJtooGKeGXM8XHt9MhOqbn/aHHubtIJODa8="
+  on:
+    tags: true
+    all_branches: true
+    condition: "$DEPLOY_TO_FORGE = yes"
